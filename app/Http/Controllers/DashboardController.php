@@ -29,8 +29,8 @@ class DashboardController extends Controller
             ->pluck('total', 'd');
 
         $requirementTotals = DayRequirement::selectRaw(
-                'day, SUM(lunch) as lunch, SUM(dinner) as dinner, SUM(accommodation) as accommodation'
-            )
+            'day, SUM(lunch) as lunch, SUM(dinner) as dinner, SUM(accommodation) as accommodation'
+        )
             ->groupBy('day')
             ->get()
             ->keyBy('day');
@@ -40,19 +40,19 @@ class DashboardController extends Controller
             $req = $requirementTotals->get($n);
 
             return [
-                'number'        => $n,
-                'date'          => $date,
-                'is_today'      => $date->isToday(),
-                'checked_in'    => (int) ($attendanceByDate[$date->toDateString()] ?? 0),
-                'lunch'         => (int) ($req?->lunch ?? 0),
-                'dinner'        => (int) ($req?->dinner ?? 0),
+                'number' => $n,
+                'date' => $date,
+                'is_today' => $date->isToday(),
+                'checked_in' => (int) ($attendanceByDate[$date->toDateString()] ?? 0),
+                'lunch' => (int) ($req?->lunch ?? 0),
+                'dinner' => (int) ($req?->dinner ?? 0),
                 'accommodation' => (int) ($req?->accommodation ?? 0),
             ];
         });
 
         $stats = [
-            'attended'      => Attendance::distinct()->count('participant_id'),
-            'today'         => Attendance::whereDate('attended_on', today())->count(),
+            'attended' => Attendance::distinct()->count('participant_id'),
+            'today' => Attendance::whereDate('attended_on', today())->count(),
             'accommodation' => DayRequirement::where('accommodation', true)->count(),
         ];
 
@@ -60,7 +60,6 @@ class DashboardController extends Controller
         $pending = $sync->counts();
 
         $registration = $this->registrationLink();
-
 
         return view('dashboard', compact('days', 'stats', 'recent', 'pending', 'registration'));
     }
@@ -86,12 +85,12 @@ class DashboardController extends Controller
             return ['url' => null, 'qr' => null, 'label' => null];
         }
 
-        $writer = new Writer(new ImageRenderer(new RendererStyle(320, 2), new SvgImageBackEnd()));
+        $writer = new Writer(new ImageRenderer(new RendererStyle(320, 2), new SvgImageBackEnd));
         $svg = preg_replace('/^<\?xml[^>]*\?>\s*/', '', $writer->writeString($url));
 
         return [
-            'url'   => $url,
-            'qr'    => $svg,
+            'url' => $url,
+            'qr' => $svg,
             'label' => Str::limit(preg_replace('#^https?://#', '', $url), 30),
         ];
     }

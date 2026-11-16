@@ -9,6 +9,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 
 class ParticipantController extends Controller
 {
@@ -36,7 +37,7 @@ class ParticipantController extends Controller
             ->all();
 
         $results = collect($results)
-            ->map(fn ($r) => \Illuminate\Support\Arr::only($r, ['code', 'name', 'organization'])
+            ->map(fn ($r) => Arr::only($r, ['code', 'name', 'organization'])
                 + ['checked_in' => in_array($r['code'], $checkedIn)])
             ->all();
 
@@ -59,8 +60,8 @@ class ParticipantController extends Controller
         }
 
         return $query->orderBy('name')->limit(20)->get()->map(fn ($p) => [
-            'code'         => $p->participant_code,
-            'name'         => $p->name,
+            'code' => $p->participant_code,
+            'name' => $p->name,
             'organization' => $p->organization,
         ])->all();
     }
@@ -69,8 +70,8 @@ class ParticipantController extends Controller
     public function open(Request $request)
     {
         $data = $request->validate([
-            'code'         => ['required', 'string', 'max:100'],
-            'name'         => ['required', 'string', 'max:255'],
+            'code' => ['required', 'string', 'max:100'],
+            'name' => ['required', 'string', 'max:255'],
             'organization' => ['nullable', 'string', 'max:255'],
         ]);
 
@@ -93,8 +94,8 @@ class ParticipantController extends Controller
             $date = $start->copy()->addDays($n - 1);
 
             return [
-                'number'   => $n,
-                'date'     => $date,
+                'number' => $n,
+                'date' => $date,
                 'is_today' => $date->isToday(),
                 'attended' => in_array($date->toDateString(), $attendedDates),
             ];
@@ -143,10 +144,10 @@ class ParticipantController extends Controller
             $participant->requirements()->updateOrCreate(
                 ['day' => $day],
                 [
-                    'lunch'         => $request->boolean("days.$day.lunch"),
-                    'dinner'        => $request->boolean("days.$day.dinner"),
+                    'lunch' => $request->boolean("days.$day.lunch"),
+                    'dinner' => $request->boolean("days.$day.dinner"),
                     'accommodation' => $request->boolean("days.$day.accommodation"),
-                    'synced_at'     => null,   // changed, so it needs uploading
+                    'synced_at' => null,   // changed, so it needs uploading
                 ]
             );
         }
@@ -155,6 +156,7 @@ class ParticipantController extends Controller
 
         if ($supabase->syncRequirements($participant)) {
             $participant->requirements()->update(['synced_at' => now()]);
+
             return back()->with('status', 'Requirements saved.');
         }
 

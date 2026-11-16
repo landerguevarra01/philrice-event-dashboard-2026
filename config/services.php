@@ -36,16 +36,16 @@ return [
     ],
 
     'participants' => [
-    'url'         => env('PARTICIPANT_API_URL'),
-    'checkin_url' => env('PARTICIPANT_CHECKIN_URL'),
-    'key'         => env('PARTICIPANT_API_KEY'),
-    'register_url' => env('PARTICIPANT_REGISTER_URL'),
-    'register_key' => env('PARTICIPANT_REGISTER_KEY', env('PARTICIPANT_API_KEY')),
+        'url' => env('PARTICIPANT_API_URL'),
+        'checkin_url' => env('PARTICIPANT_CHECKIN_URL'),
+        'key' => env('PARTICIPANT_API_KEY'),
+        'register_url' => env('PARTICIPANT_REGISTER_URL'),
+        'register_key' => env('PARTICIPANT_REGISTER_KEY', env('PARTICIPANT_API_KEY')),
     ],
 
     'supabase' => [
-    'url' => env('SUPABASE_URL'),
-    'key' => env('SUPABASE_SERVICE_KEY'),
+        'url' => env('SUPABASE_URL'),
+        'key' => env('SUPABASE_SERVICE_KEY'),
     ],
 
 ];

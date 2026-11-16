@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 class SyncPending extends Command
 {
     protected $signature = 'app:sync-pending';
+
     protected $description = 'Send offline check-ins and meal records to the registration API and Supabase';
 
     public function handle(PendingSync $sync): int

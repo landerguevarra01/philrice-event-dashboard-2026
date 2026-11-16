@@ -51,6 +51,7 @@ class ParticipantApi
         foreach ($responses as $response) {
             if (! $response instanceof Response) {   // connection error or timeout
                 $hadError = true;
+
                 continue;
             }
 
@@ -90,18 +91,18 @@ class ParticipantApi
                 ->post(config('services.participants.checkin_url'), ['qrcode' => $qrdata]);
         } catch (ConnectionException $e) {
             return ['ok' => false, 'already' => false, 'offline' => true,
-                    'message' => 'No connection to the registration system.', 'data' => null];
+                'message' => 'No connection to the registration system.', 'data' => null];
         }
 
         $message = $response->json('message') ?: 'Check-in failed.';
         $ok = $response->successful() && $response->json('success') === true;
 
         return [
-            'ok'      => $ok,
+            'ok' => $ok,
             'already' => ! $ok && str_contains(strtolower($message), 'already'),
             'offline' => $response->serverError(),   // 5xx: the server is down, try again later
             'message' => $message,
-            'data'    => $response->json('data'),
+            'data' => $response->json('data'),
         ];
     }
 
@@ -153,12 +154,12 @@ class ParticipantApi
                 ->filter()->implode(' - ');
 
         return [
-            'code'         => trim((string) ($row['qrdata'] ?? '')),
-            'name'         => $name,
+            'code' => trim((string) ($row['qrdata'] ?? '')),
+            'name' => $name,
             'organization' => $organization ?: null,
-            'sex'          => $this->clean($row['sex'] ?? null, true),
-            'age_bracket'  => $this->clean($row['ageBracket'] ?? null),
-            'region'       => $this->clean($row['affiliationRegion'] ?? null),
+            'sex' => $this->clean($row['sex'] ?? null, true),
+            'age_bracket' => $this->clean($row['ageBracket'] ?? null),
+            'region' => $this->clean($row['affiliationRegion'] ?? null),
         ];
     }
 
@@ -178,11 +179,11 @@ class ParticipantApi
         $ok = $response->successful() && $response->json('success') === true;
 
         return [
-            'ok'      => $ok,
-            'status'  => $response->status(),
-            'errors'  => $response->json('errors'),
+            'ok' => $ok,
+            'status' => $response->status(),
+            'errors' => $response->json('errors'),
             'message' => $response->json('message') ?: ($ok ? 'Participant registered.' : 'Registration failed.'),
-            'data'    => $response->json('data'),
+            'data' => $response->json('data'),
         ];
     }
 }

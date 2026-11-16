@@ -9,6 +9,7 @@ use Illuminate\Console\Command;
 class CacheParticipants extends Command
 {
     protected $signature = 'app:cache-participants';
+
     protected $description = 'Save participants from the registration API on this device for offline search';
 
     public function handle(ParticipantApi $api): int
@@ -20,7 +21,7 @@ class CacheParticipants extends Command
             $this->line("Letter {$letter} done");
         }
 
-        $this->info('Participants stored on this device: ' . Participant::count());
+        $this->info('Participants stored on this device: '.Participant::count());
 
         return self::SUCCESS;
     }

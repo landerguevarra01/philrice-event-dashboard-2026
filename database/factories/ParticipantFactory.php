@@ -9,7 +9,7 @@ class ParticipantFactory extends Factory
     public function definition(): array
     {
         return [
-            'participant_code' => 'EVT-' . fake()->unique()->numerify('#####'),
+            'participant_code' => 'EVT-'.fake()->unique()->numerify('#####'),
             'name' => fake()->name(),
             'organization' => fake()->company(),
             'checked_in_at' => null,

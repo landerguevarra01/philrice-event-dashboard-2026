@@ -38,8 +38,8 @@ class Participant extends Model
 
         return $query->where(function ($q) use ($term) {
             $q->where('name', 'like', "%{$term}%")
-              ->orWhere('participant_code', 'like', "%{$term}%")
-              ->orWhere('organization', 'like', "%{$term}%");
+                ->orWhere('participant_code', 'like', "%{$term}%")
+                ->orWhere('organization', 'like', "%{$term}%");
         });
     }
 
@@ -58,11 +58,11 @@ class Participant extends Model
         return static::updateOrCreate(
             ['participant_code' => $r['code']],
             [
-                'name'         => $r['name'],
+                'name' => $r['name'],
                 'organization' => $r['organization'],
-                'sex'          => $r['sex'] ?? null,
-                'age_bracket'  => $r['age_bracket'] ?? null,
-                'region'       => $r['region'] ?? null,
+                'sex' => $r['sex'] ?? null,
+                'age_bracket' => $r['age_bracket'] ?? null,
+                'region' => $r['region'] ?? null,
             ]
         );
     }

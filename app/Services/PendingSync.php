@@ -14,7 +14,7 @@ class PendingSync
     {
         return [
             'checkins' => Attendance::whereNull('synced_at')->count(),
-            'meals'    => DayRequirement::whereNull('synced_at')->count(),
+            'meals' => DayRequirement::whereNull('synced_at')->count(),
         ];
     }
 
