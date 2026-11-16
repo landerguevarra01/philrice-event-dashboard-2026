@@ -1,0 +1,325 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Method App\\Http\\Controllers\\DashboardController\:\:index\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\DashboardController\:\:registrationLink\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\DashboardController\:\:sync\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Part \$remaining \(non\-empty\-array\|float\|int\<min, \-1\>\|int\<1, max\>\) of encapsed string cannot be cast to string\.$#'
+			identifier: encapsedStringPart.nonString
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Relation ''participant'' is not found in App\\Models\\Attendance model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>accommodation" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>dinner" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>lunch" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Participant\:\:\$attendances\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/ParticipantController.php
+
+		-
+			message: '#^Argument of an invalid type list\<string\>\|false supplied for foreach, only iterables are supported\.$#'
+			identifier: foreach.nonIterable
+			count: 1
+			path: app/Http/Controllers/ParticipantController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\ParticipantController\:\:cacheResults\(\) has parameter \$results with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/ParticipantController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\ParticipantController\:\:certificate\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/ParticipantController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\ParticipantController\:\:checkIn\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/ParticipantController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\ParticipantController\:\:open\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/ParticipantController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\ParticipantController\:\:saveRequirements\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/ParticipantController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\ParticipantController\:\:searchLocal\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/ParticipantController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\ParticipantController\:\:show\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/ParticipantController.php
+
+		-
+			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, Carbon\\CarbonImmutable\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/ParticipantController.php
+
+		-
+			message: '#^Relation ''attendances'' is not found in App\\Models\\Participant model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/ParticipantController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\RegistrationController\:\:create\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/RegistrationController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\RegistrationController\:\:store\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/RegistrationController.php
+
+		-
+			message: '#^Method App\\Models\\Attendance\:\:participant\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Models/Attendance.php
+
+		-
+			message: '#^Method App\\Models\\DayRequirement\:\:participant\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/DayRequirement.php
+
+		-
+			message: '#^Class App\\Models\\Participant uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Participant.php
+
+		-
+			message: '#^Method App\\Models\\Participant\:\:attendances\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Models/Participant.php
+
+		-
+			message: '#^Method App\\Models\\Participant\:\:remember\(\) has parameter \$r with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Models/Participant.php
+
+		-
+			message: '#^Method App\\Models\\Participant\:\:requirements\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: app/Models/Participant.php
+
+		-
+			message: '#^Method App\\Models\\Participant\:\:scopeSearch\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Models/Participant.php
+
+		-
+			message: '#^Method App\\Models\\Participant\:\:scopeSearch\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: app/Models/Participant.php
+
+		-
+			message: '#^Method App\\Services\\ParticipantApi\:\:checkIn\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/ParticipantApi.php
+
+		-
+			message: '#^Method App\\Services\\ParticipantApi\:\:clean\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: app/Services/ParticipantApi.php
+
+		-
+			message: '#^Method App\\Services\\ParticipantApi\:\:extractRows\(\) has parameter \$json with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: app/Services/ParticipantApi.php
+
+		-
+			message: '#^Method App\\Services\\ParticipantApi\:\:extractRows\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/ParticipantApi.php
+
+		-
+			message: '#^Method App\\Services\\ParticipantApi\:\:normalize\(\) has parameter \$row with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/ParticipantApi.php
+
+		-
+			message: '#^Method App\\Services\\ParticipantApi\:\:normalize\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/ParticipantApi.php
+
+		-
+			message: '#^Method App\\Services\\ParticipantApi\:\:register\(\) has parameter \$payload with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/ParticipantApi.php
+
+		-
+			message: '#^Method App\\Services\\ParticipantApi\:\:register\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/ParticipantApi.php
+
+		-
+			message: '#^Method App\\Services\\ParticipantApi\:\:search\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/ParticipantApi.php
+
+		-
+			message: '#^Parameter \#1 \$value of function collect expects Illuminate\\Contracts\\Support\\Arrayable\<int\<0, max\>, string\>\|iterable\<int\<0, max\>, string\>\|null, list\<string\>\|false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/ParticipantApi.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Attendance\:\:\$participant\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/PendingSync.php
+
+		-
+			message: '#^Method App\\Services\\PendingSync\:\:counts\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/PendingSync.php
+
+		-
+			message: '#^Method App\\Services\\PendingSync\:\:run\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/PendingSync.php
+
+		-
+			message: '#^Relation ''participant'' is not found in App\\Models\\Attendance model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Services/PendingSync.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$accommodation\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/SupabaseSync.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$day\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/SupabaseSync.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$dinner\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/SupabaseSync.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$lunch\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/SupabaseSync.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Services/SupabaseSync.php
+
+		-
+			message: '#^Parameter \#2 \$data of method Illuminate\\Http\\Client\\PendingRequest\<false\>\:\:post\(\) expects array\<int\<0, max\>\|string, mixed\>\|object\|null, non\-empty\-array\<int, array\{participant_code\: string, participant_name\: string, organization\: string\|null, day\: mixed, lunch\: mixed, dinner\: mixed, accommodation\: mixed, updated_at\: string\}\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/SupabaseSync.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Services/SupabaseSync.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Support\\Collection\<int,array\<string, mixed\>\>\:\:all\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Services/SupabaseSync.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Support\\Collection\<int,array\<string, mixed\>\>\:\:values\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Services/SupabaseSync.php
+
+		-
+			message: '#^Class Database\\Factories\\ParticipantFactory extends generic class Illuminate\\Database\\Eloquent\\Factories\\Factory but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: database/factories/ParticipantFactory.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:requirements\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: database/seeders/ParticipantSeeder.php
