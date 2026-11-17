@@ -26,9 +26,9 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         if (config('event.force_build_assets')) {
-        // While sharing the site, ignore the dev-server marker and use public/build
-        Vite::useHotFile(storage_path('framework/vite-disabled.hot'));
-}
+            // While sharing the site, ignore the dev-server marker and use public/build
+            Vite::useHotFile(storage_path('framework/vite-disabled.hot'));
+        }
     }
 
     /**
