@@ -3,13 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Participant;
+use App\Services\AttendanceApi;
 use App\Services\ParticipantApi;
+use App\Services\SignatoryStore;
 use App\Services\SupabaseSync;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 
 class ParticipantController extends Controller
 {
@@ -67,7 +71,7 @@ class ParticipantController extends Controller
     }
 
     // Save (or refresh) the selected participant locally, then open the profile
-    public function open(Request $request)
+    public function open(Request $request, AttendanceApi $attendance)
     {
         $data = $request->validate([
             'code' => ['required', 'string', 'max:100'],
@@ -80,7 +84,52 @@ class ParticipantController extends Controller
             ['name' => $data['name'], 'organization' => $data['organization'] ?? null]
         );
 
+        $this->importAttendance($participant, $attendance);
+
         return redirect()->route('participants.show', $participant);
+    }
+
+    /**
+     * People the registration system lists as attended can print their certificate here,
+     * even if they were checked in on another device.
+     */
+    private function importAttendance(Participant $participant, AttendanceApi $attendance): void
+    {
+        $record = collect($attendance->get()['records'])->firstWhere('code', $participant->participant_code);
+
+        if (! $record) {
+            return;
+        }
+
+        $first = null;
+
+        foreach ($record['days'] as $day) {
+            if ($day['date'] === null) {
+                continue;   // did not attend that day
+            }
+
+            if ($day['at'] > 0) {
+                $when = Carbon::createFromTimestamp($day['at'], config('app.timezone'));
+
+                $exists = $participant->attendances()->whereDate('attended_on', $when->toDateString())->exists();
+
+                if (! $exists) {
+                    $participant->attendances()->create([
+                        'attended_on' => $when->toDateString(),
+                        'checked_in_at' => $when,
+                        'synced_at' => now(),   // already in the registration system, nothing to upload
+                    ]);
+                }
+            } else {
+                $when = now();   // attended, but the time could not be read
+            }
+
+            $first = ($first === null || $when->lessThan($first)) ? $when : $first;
+        }
+
+        if ($first !== null && $participant->checked_in_at === null) {
+            $participant->update(['checked_in_at' => $first]);
+        }
     }
 
     public function show(Participant $participant)
@@ -163,18 +212,93 @@ class ParticipantController extends Controller
         return back()->with('status', 'Saved on this device. It will upload to Supabase automatically when the connection returns.');
     }
 
-    public function certificate(Participant $participant)
+    public function certificate(Participant $participant, AttendanceApi $attendance, SignatoryStore $signatory)
     {
-        abort_unless($participant->checked_in_at, 403, 'This participant has not checked in.');
+        ini_set('memory_limit', '512M');   // PDF generation can need more than the 128M default
+        $attended = $this->attendedDates($participant, $attendance);
+
+        abort_unless($attended->isNotEmpty(), 403, 'This participant has not attended any day yet.');
 
         $requirements = $participant->requirements->keyBy('day');
 
+        // Event days, for the Nov-23 / Nov-24 / Nov-25 columns of the meals table
         $start = Carbon::parse(config('event.start_date'));
-        $dates = collect(range(1, config('event.days')))
+        $dates = collect(range(1, (int) config('event.days')))
             ->mapWithKeys(fn ($day) => [$day => $start->copy()->addDays($day - 1)]);
 
-        return Pdf::loadView('certificates.participant', compact('participant', 'requirements', 'dates'))
+        return Pdf::loadView('certificates.participant', [
+            'participant' => $participant,
+            'requirements' => $requirements,
+            'dates' => $dates,
+            'attendedText' => $this->datesText($attended),
+            'issued' => $attended->last()->format('F j, Y'),
+            'signatory' => $signatory->get(),
+        ])
             ->setPaper('a4', 'landscape')
             ->stream("certificate-{$participant->participant_code}.pdf");
+    }
+
+    /**
+     * The days this person attended: the registration system's records plus any check-in made on this device.
+     *
+     * @return Collection<int, CarbonImmutable>
+     */
+    private function attendedDates(Participant $participant, AttendanceApi $attendance): Collection
+    {
+        $dates = collect();
+        $record = collect($attendance->get()['records'])->firstWhere('code', $participant->participant_code);
+
+        foreach ($record['days'] ?? [] as $day) {
+            if (($day['at'] ?? 0) > 0) {
+                $dates->push(CarbonImmutable::createFromTimestamp($day['at'], config('app.timezone'))->startOfDay());
+            }
+        }
+
+        foreach ($participant->attendances as $a) {
+            $dates->push(CarbonImmutable::parse($a->attended_on)->startOfDay());
+        }
+
+        return $dates
+            ->unique(fn ($d) => $d->toDateString())
+            ->sortBy(fn ($d) => $d->getTimestamp())
+            ->values();
+    }
+
+    /**
+     * "November 16, 2026" / "November 23 and 25, 2026" / "November 23 to 25, 2026"
+     *
+     * @param  Collection<int, CarbonImmutable>  $dates
+     */
+    private function datesText(Collection $dates): string
+    {
+        $first = $dates->first();
+        $last = $dates->last();
+
+        if ($dates->count() === 1) {
+            return $first->format('F j, Y');
+        }
+
+        $sameMonth = $first->format('Y-m') === $last->format('Y-m');
+        $sameYear = $first->year === $last->year;
+        $consecutive = (int) $first->diffInDays($last) === $dates->count() - 1;
+
+        // Three or more days in a row become a range
+        if ($consecutive && $dates->count() >= 3) {
+            if ($sameMonth) {
+                return $first->format('F j').' to '.$last->format('j, Y');
+            }
+
+            return $sameYear
+                ? $first->format('F j').' to '.$last->format('F j, Y')
+                : $first->format('F j, Y').' to '.$last->format('F j, Y');
+        }
+
+        $labels = $dates->map(fn ($d) => $sameMonth ? $d->format('j') : ($sameYear ? $d->format('F j') : $d->format('F j, Y')));
+
+        $joined = $labels->count() === 2
+            ? $labels->implode(' and ')
+            : $labels->slice(0, -1)->implode(', ').' and '.$labels->last();
+
+        return ($sameMonth ? $first->format('F').' ' : '').$joined.($sameYear ? ', '.$last->format('Y') : '');
     }
 }

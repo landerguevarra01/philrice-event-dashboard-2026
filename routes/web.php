@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ParticipantController;
 use App\Http\Controllers\RegistrationController;
+use App\Http\Controllers\SignatoryController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard')->name('home');
@@ -20,6 +22,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/participants/{participant}/check-in', [ParticipantController::class, 'checkIn'])->name('participants.checkin');
     Route::post('/participants/{participant}/requirements', [ParticipantController::class, 'saveRequirements'])->name('participants.requirements');
     Route::get('/participants/{participant}/certificate', [ParticipantController::class, 'certificate'])->name('participants.certificate');
+
+    Route::get('/attendance', AttendanceController::class)->name('attendance.index');
+
+    Route::get('/signatory', [SignatoryController::class, 'show'])->name('signatory.show');
+    Route::put('/signatory', [SignatoryController::class, 'update'])->name('signatory.update');
 });
 
 // Public: anyone with the link can register. Everything else stays behind login.

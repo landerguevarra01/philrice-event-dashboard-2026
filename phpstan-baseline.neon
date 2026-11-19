@@ -25,33 +25,9 @@ parameters:
 			path: app/Http/Controllers/DashboardController.php
 
 		-
-			message: '#^Relation ''participant'' is not found in App\\Models\\Attendance model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Http/Controllers/DashboardController.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>accommodation" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Http/Controllers/DashboardController.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>dinner" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Http/Controllers/DashboardController.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>lunch" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Http/Controllers/DashboardController.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\Participant\:\:\$attendances\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 3
 			path: app/Http/Controllers/ParticipantController.php
 
 		-
@@ -99,12 +75,6 @@ parameters:
 		-
 			message: '#^Method App\\Http\\Controllers\\ParticipantController\:\:show\(\) has no return type specified\.$#'
 			identifier: missingType.return
-			count: 1
-			path: app/Http/Controllers/ParticipantController.php
-
-		-
-			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, Carbon\\CarbonImmutable\|null given\.$#'
-			identifier: argument.type
 			count: 1
 			path: app/Http/Controllers/ParticipantController.php
 
@@ -173,6 +143,12 @@ parameters:
 			identifier: missingType.parameter
 			count: 1
 			path: app/Models/Participant.php
+
+		-
+			message: '#^Method App\\Services\\AttendanceApi\:\:get\(\) should return array\{records\: array\<int, array\<string, mixed\>\>, updated_at\: string\|null, stale\: bool, error\: string\|null\} but returns array\<mixed, mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/AttendanceApi.php
 
 		-
 			message: '#^Method App\\Services\\ParticipantApi\:\:checkIn\(\) return type has no value type specified in iterable type array\.$#'
@@ -257,6 +233,12 @@ parameters:
 			identifier: larastan.relationExistence
 			count: 1
 			path: app/Services/PendingSync.php
+
+		-
+			message: '#^Parameter \#1 \$key of method Illuminate\\Http\\Client\\Response\:\:json\(\) expects string\|null, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/SignatoryStore.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$accommodation\.$#'

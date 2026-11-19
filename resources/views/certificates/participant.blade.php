@@ -1,9 +1,5 @@
 @php
-    $first = $dates->first();
-    $last = $dates->last();
-    $rangeText = $first->format('F j') . ' to ' . $last->format('j, Y');
-
-    $check = fn($day, $item) => optional($requirements->get($day))->$item ? '&#10003;' : '';
+$check = fn($day, $item) => optional($requirements->get($day))->$item ? '&#10003;' : '';
 @endphp
 <!DOCTYPE html>
 <html>
@@ -100,14 +96,36 @@
             font-family: 'DejaVu Sans', sans-serif;
             font-size: 13pt;
         }
+
+        .signatory {
+            position: absolute;
+            left: 400pt;
+            width: 280pt;
+            text-align: center;
+        }
+
+        .sg-name {
+            font-weight: bold;
+            font-size: 13pt;
+        }
+
+        .sg-role {
+            font-size: 12pt;
+            line-height: 1.25;
+        }
     </style>
 </head>
 
 <body>
     <div class="page">
 
-        @if (file_exists(public_path('images/certificate-bg.png')))
-            <img class="bg" src="{{ public_path('images/certificate-bg.png') }}">
+        @php
+            // Prefer the JPEG (light on memory); fall back to the PNG
+            $bgFile = collect(['new-certificate-bg.jpg', 'new-certificate-bg.png'])
+                ->first(fn($f) => file_exists(public_path('images/' . $f)));
+        @endphp
+        @if ($bgFile)
+            <img class="bg" src="{{ public_path('images/' . $bgFile) }}">
         @endif
 
         <div class="content title" style="top: 92pt;">CERTIFICATE OF APPEARANCE</div>
@@ -121,7 +139,7 @@
             @endif
             participated in the <b>38<sup style="font-size:8pt">th</sup> <i>Ugnay Palay</i> National Rice R4DE
                 Conference</b>
-            at {{ config('event.venue') }} on <b>{{ $rangeText }}.</b>
+            at {{ config('event.venue') }} on <b>{{ $attendedText }}.</b>
         </div>
 
         <div class="content" style="top: 252pt;">In addition, the following arrangements were provided:</div>
@@ -161,7 +179,12 @@
         </div>
 
         <div class="content" style="top: 448pt;">
-            Issued this {{ now()->format('F j, Y') }}, for reference purposes.
+            Issued this {{ $issued }}, for reference purposes.
+        </div>
+
+        <div class="signatory" style="top: 492pt;">
+            <div class="sg-name">{{ mb_strtoupper($signatory['name']) }}</div>
+            <div class="sg-role">{{ $signatory['role'] }}</div>
         </div>
 
     </div>

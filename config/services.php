@@ -40,6 +40,7 @@ return [
         'checkin_url' => env('PARTICIPANT_CHECKIN_URL'),
         'key' => env('PARTICIPANT_API_KEY'),
         'register_url' => env('PARTICIPANT_REGISTER_URL'),
+        'attendance_url' => env('PARTICIPANT_ATTENDANCE_URL'),
         'register_key' => env('PARTICIPANT_REGISTER_KEY', env('PARTICIPANT_API_KEY')),
     ],
 

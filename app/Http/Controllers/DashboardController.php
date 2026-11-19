@@ -2,66 +2,33 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Attendance;
-use App\Models\DayRequirement;
+// use App\Models\Attendance;
+// use App\Models\DayRequirement;
 use App\Services\PendingSync;
+use App\Services\SignatoryStore;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
 use BaconQrCode\Writer;
-use Carbon\Carbon;
+// use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request, PendingSync $sync)
+    public function index(Request $request, PendingSync $sync, SignatoryStore $signatories)
     {
         if ($request->header('X-Inertia')) {
             return Inertia::location(route('dashboard'));
         }
 
-        $start = Carbon::parse(config('event.start_date'));
-
-        $attendanceByDate = Attendance::selectRaw('DATE(attended_on) as d, COUNT(*) as total')
-            ->groupBy('d')
-            ->pluck('total', 'd');
-
-        $requirementTotals = DayRequirement::selectRaw(
-            'day, SUM(lunch) as lunch, SUM(dinner) as dinner, SUM(accommodation) as accommodation'
-        )
-            ->groupBy('day')
-            ->get()
-            ->keyBy('day');
-
-        $days = collect(range(1, (int) config('event.days')))->map(function ($n) use ($start, $attendanceByDate, $requirementTotals) {
-            $date = $start->copy()->addDays($n - 1);
-            $req = $requirementTotals->get($n);
-
-            return [
-                'number' => $n,
-                'date' => $date,
-                'is_today' => $date->isToday(),
-                'checked_in' => (int) ($attendanceByDate[$date->toDateString()] ?? 0),
-                'lunch' => (int) ($req?->lunch ?? 0),
-                'dinner' => (int) ($req?->dinner ?? 0),
-                'accommodation' => (int) ($req?->accommodation ?? 0),
-            ];
-        });
-
-        $stats = [
-            'attended' => Attendance::distinct()->count('participant_id'),
-            'today' => Attendance::whereDate('attended_on', today())->count(),
-            'accommodation' => DayRequirement::where('accommodation', true)->count(),
-        ];
-
-        $recent = Attendance::with('participant')->latest('checked_in_at')->take(8)->get();
-        $pending = $sync->counts();
-
-        $registration = $this->registrationLink();
-
-        return view('dashboard', compact('days', 'stats', 'recent', 'pending', 'registration'));
+        return view('dashboard', [
+            'pending' => $sync->counts(),
+            'registration' => $this->registrationLink(),
+            'dayCount' => (int) config('event.days'),
+            'signatory' => $signatories->cached(),
+        ]);
     }
 
     public function sync(PendingSync $sync)

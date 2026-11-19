@@ -8,4 +8,8 @@ return [
     'registration_url' => env('EVENT_REGISTRATION_URL'),
     'age_brackets' => ['30 y/o and below', '31-45 y/o', '46-49 y/o', '60 y/o and above'],
     'force_build_assets' => env('FORCE_BUILD_ASSETS', false),
+    'signatory' => [
+        'name' => 'Ommal H. Abdulkadil',
+        'role' => 'Branch Director, DA-PhilRice Negros',
+    ],
 ];
