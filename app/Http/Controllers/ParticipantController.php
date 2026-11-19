@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Attendance;
 use App\Models\Participant;
 use App\Services\AttendanceApi;
 use App\Services\ParticipantApi;
@@ -176,7 +177,7 @@ class ParticipantController extends Controller
         $start = CarbonImmutable::parse(config('event.start_date'))->startOfDay();
         $eventDays = (int) config('event.days');
 
-        foreach ($participant->attendances as $a) {
+        foreach ($this->localAttendances($participant, $record) as $a) {
             $n = (int) round($start->diffInDays(CarbonImmutable::parse($a->attended_on)->startOfDay(), false)) + 1;
 
             if ($n >= 1 && $n <= $eventDays) {
@@ -294,7 +295,7 @@ class ParticipantController extends Controller
             }
         }
 
-        foreach ($participant->attendances as $a) {
+        foreach ($this->localAttendances($participant, $record) as $a) {
             $dates->push(CarbonImmutable::parse($a->attended_on)->startOfDay());
         }
 
@@ -340,5 +341,20 @@ class ParticipantController extends Controller
             : $labels->slice(0, -1)->implode(', ').' and '.$labels->last();
 
         return ($sameMonth ? $first->format('F').' ' : '').$joined.($sameYear ? ', '.$last->format('Y') : '');
+    }
+
+    /**
+     * Local check-ins that count. When the registration system has a record for this person, it is
+     * the truth, so only check-ins that have not been uploaded yet are added to it. Without a record,
+     * every local check-in counts.
+     *
+     * @param  array<string, mixed>|null  $record
+     * @return Collection<int, Attendance>
+     */
+    private function localAttendances(Participant $participant, ?array $record): Collection
+    {
+        return $record === null
+            ? $participant->attendances
+            : $participant->attendances->whereNull('synced_at');
     }
 }
