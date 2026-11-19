@@ -132,21 +132,21 @@ class ParticipantController extends Controller
         }
     }
 
-    public function show(Participant $participant)
+    public function show(Participant $participant, AttendanceApi $attendance)
     {
         $requirements = $participant->requirements->keyBy('day');
-        $attendedDates = $participant->attendances->map(fn ($a) => $a->attended_on->toDateString())->all();
+        $attendedDays = $this->attendedDays($participant, $attendance);
 
         $start = Carbon::parse(config('event.start_date'));
 
-        $days = collect(range(1, (int) config('event.days')))->map(function ($n) use ($start, $attendedDates) {
+        $days = collect(range(1, (int) config('event.days')))->map(function ($n) use ($start, $attendedDays) {
             $date = $start->copy()->addDays($n - 1);
 
             return [
                 'number' => $n,
                 'date' => $date,
                 'is_today' => $date->isToday(),
-                'attended' => in_array($date->toDateString(), $attendedDates),
+                'attended' => in_array($n, $attendedDays, true),
             ];
         });
 
@@ -155,8 +155,41 @@ class ParticipantController extends Controller
         return view('participants.show', compact('participant', 'requirements', 'days', 'todayAttendance'));
     }
 
-    public function checkIn(Participant $participant, ParticipantApi $api)
+    /**
+     * Event day numbers (1, 2, 3) this person attended: the registration system's records,
+     * plus any check-in made on this device on an event day.
+     *
+     * @return array<int, int>
+     */
+    private function attendedDays(Participant $participant, AttendanceApi $attendance): array
     {
+        $days = [];
+
+        $record = collect($attendance->get()['records'])->firstWhere('code', $participant->participant_code);
+
+        foreach ($record['days'] ?? [] as $index => $day) {
+            if (($day['date'] ?? null) !== null) {
+                $days[] = $index + 1;
+            }
+        }
+
+        $start = CarbonImmutable::parse(config('event.start_date'))->startOfDay();
+        $eventDays = (int) config('event.days');
+
+        foreach ($participant->attendances as $a) {
+            $n = (int) round($start->diffInDays(CarbonImmutable::parse($a->attended_on)->startOfDay(), false)) + 1;
+
+            if ($n >= 1 && $n <= $eventDays) {
+                $days[] = $n;
+            }
+        }
+
+        return array_values(array_unique($days));
+    }
+
+    public function checkIn(Participant $participant, ParticipantApi $api, AttendanceApi $attendance)
+    {
+        $attendance->forget();   // so the profile shows today's attendance right away
         if ($participant->checkedInToday()) {
             return back()->with('status', 'Already checked in today.');
         }
@@ -187,16 +220,23 @@ class ParticipantController extends Controller
             : $result['message']);
     }
 
-    public function saveRequirements(Request $request, Participant $participant, SupabaseSync $supabase)
+    public function saveRequirements(Request $request, Participant $participant, SupabaseSync $supabase, AttendanceApi $attendance)
     {
-        foreach ([1, 2, 3] as $day) {
+        $allowed = $this->attendedDays($participant, $attendance);
+
+        if ($allowed === []) {
+            return back()->with('error', 'Meals and accommodation can only be saved for days this participant attended.');
+        }
+
+        // Only the days they attended. Locked days are left exactly as they are.
+        foreach ($allowed as $day) {
             $participant->requirements()->updateOrCreate(
                 ['day' => $day],
                 [
                     'lunch' => $request->boolean("days.$day.lunch"),
                     'dinner' => $request->boolean("days.$day.dinner"),
                     'accommodation' => $request->boolean("days.$day.accommodation"),
-                    'synced_at' => null,   // changed, so it needs uploading
+                    'synced_at' => null,
                 ]
             );
         }

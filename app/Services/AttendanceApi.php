@@ -54,6 +54,11 @@ class AttendanceApi
         return $payload;
     }
 
+    public function forget(): void
+    {
+        Cache::forget(self::CACHE_KEY);
+    }
+
     /** @return array<int, array<string, mixed>> */
     private function fetch(): array
     {

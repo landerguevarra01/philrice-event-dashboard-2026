@@ -334,6 +334,53 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        .pf-col.is-locked {
+            background: #F1F4F0;
+            border-style: dashed;
+        }
+
+        .pf-col.is-locked .pf-colhead {
+            color: var(--muted);
+        }
+
+        .pf-col.is-locked .pf-opt {
+            background: #F7F9F6;
+            color: #8A978F;
+            cursor: not-allowed;
+        }
+
+        .pf-col.is-locked .pf-opt:hover {
+            border-color: var(--line);
+        }
+
+        .pf-col.is-locked .pf-opt:has(input:checked) {
+            background: #ECEFEB;
+            border-color: #C5CEC6;
+        }
+
+        .pf-col.is-locked .pf-opt input {
+            cursor: not-allowed;
+        }
+
+        .pf-locked {
+            font-size: .75rem;
+            font-weight: 600;
+            background: #E3E8E2;
+            color: var(--muted);
+            border-radius: 999px;
+            padding: .05rem .5rem;
+        }
+
+        .pf-note {
+            margin: 0 0 1rem;
+            padding: .7rem 1rem;
+            border-radius: 10px;
+            background: var(--grain-tint);
+            border: 1px solid #EFD98A;
+            color: #5C4300;
+            font-size: .9375rem;
+        }
     </style>
 
     <section class="pf-hero">
@@ -389,24 +436,29 @@
         <form method="POST" action="{{ route('participants.requirements', $participant) }}" data-once>
             @csrf
             <h2 class="pf-h2">Meals and accommodation</h2>
-            <p class="pf-lede">Tick what this participant receives on each day.</p>
+            @php $anyAttended = $days->contains('attended', true); @endphp
+            <p class="pf-lede">Tick what this participant receives. Only days they attended can be changed.</p>
+            @unless ($anyAttended)
+                <p class="pf-note">No attended day yet, so everything is locked. Check this participant in first.</p>
+            @endunless
 
             <div class="pf-cols">
                 @foreach ($days as $d)
                     @php $row = $requirements->get($d['number']); @endphp
-                    <div @class(['pf-col', 'is-today' => $d['is_today']]) role="group"
+                    <div @class(['pf-col', 'is-today' => $d['is_today'], 'is-locked' => !$d['attended']]) role="group"
                         aria-labelledby="day-{{ $d['number'] }}">
                         <h3 class="pf-colhead" id="day-{{ $d['number'] }}">
                             Day {{ $d['number'] }}
                             <span class="pf-date">{{ $d['date']->format('M j') }}</span>
                             @if ($d['is_today'])<span class="pf-today">Today</span>@endif
+                            @unless ($d['attended'])<span class="pf-locked">Not attended</span>@endunless
                         </h3>
 
                         @foreach (['lunch' => 'Lunch', 'dinner' => 'Dinner', 'accommodation' => 'Accommodation'] as $item => $label)
                             <label class="pf-opt">
                                 <span>{{ $label }}</span>
                                 <input type="checkbox" name="days[{{ $d['number'] }}][{{ $item }}]" value="1"
-                                    @checked($row?->$item)>
+                                    @checked($row?->$item) @disabled(!$d['attended'])>
                             </label>
                         @endforeach
                     </div>
@@ -414,7 +466,7 @@
             </div>
 
             <div class="pf-save">
-                <button class="pf-btn" data-busy="Saving...">Save requirements</button>
+                <button class="pf-btn" data-busy="Saving..." @disabled(!$anyAttended)>Save requirements</button>
             </div>
         </form>
 
