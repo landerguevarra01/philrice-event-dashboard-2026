@@ -1185,17 +1185,35 @@
 
             // Click anywhere on a row to open that person's profile (check-in, meals, certificate)
             let opening = false;
+            let resetTimer;
+
+            function resetOpening() {
+                opening = false;
+                clearTimeout(resetTimer);
+                els.body.querySelectorAll('tr[data-code]').forEach(r => { r.style.opacity = ''; });
+            }
+
+            // Click anywhere on a row to open that person's profile (check-in, meals, certificate)
             els.body.addEventListener('click', e => {
                 const row = e.target.closest('tr[data-code]');
                 if (!row || opening) return;
                 const r = records.find(x => x.code === row.dataset.code);
                 if (!r) return;
+
                 opening = true;
                 row.style.opacity = '.6';
+                resetTimer = setTimeout(resetOpening, 5000);   // never stay locked if the page doesn't change
+
                 openForm.code.value = r.code;
                 openForm.name.value = r.name;
                 openForm.organization.value = r.affiliation || '';
                 openForm.submit();
+            });
+
+            // Coming back with the browser's Back button can restore the page as it was left
+            window.addEventListener('pageshow', e => {
+                resetOpening();
+                if (e.persisted) load(false);   // also refresh the records
             });
 
             setInterval(() => { if (!document.hidden) load(false); }, 30000);
@@ -1225,6 +1243,13 @@
                 const btn = document.getElementById('sg-save');
                 btn.disabled = true;
                 btn.textContent = 'Saving...';
+            });
+
+            // After the browser's Back button, the page can come back with the button still disabled
+            window.addEventListener('pageshow', () => {
+                const btn = document.getElementById('sg-save');
+                btn.disabled = false;
+                btn.textContent = 'Save signatory';
             });
         })();
     </script>
