@@ -684,9 +684,7 @@
             }
         }
 
-        .sg {
-            margin-top: 2.5rem;
-        }
+        .sg { margin: 0 0 2rem; }
 
         .sg-form {
             display: grid;
@@ -832,7 +830,35 @@
             </div>
         @endif
 
+        <section class="sg" id="signatory" aria-labelledby="sg-title">
+            <h2 class="ev-h2" id="sg-title">Certificate signatory</h2>
+            <p class="ev-lede">Printed at the bottom of every certificate. Saving changes the one existing record, and the name prints in capital letters.</p>
+
+            <form method="POST" action="{{ route('signatory.update') }}" class="sg-form" id="sg-form">
+                @csrf
+                @method('PUT')
+
+                <div class="sg-field">
+                    <label for="sg-name">Name</label>
+                    <input id="sg-name" name="name" type="text" maxlength="120" required autocomplete="off"
+                        value="{{ old('name', $signatory['name']) }}">
+                    @error('name')
+                    <p class="sg-err">{{ $message }}</p>@enderror
+                </div>
+
+                <div class="sg-field">
+                    <label for="sg-role">Role</label>
+                    <input id="sg-role" name="role" type="text" maxlength="160" required autocomplete="off"
+                        value="{{ old('role', $signatory['role']) }}">
+                    @error('role')
+                    <p class="sg-err">{{ $message }}</p>@enderror
+                </div>
+
+                <button class="sg-save" id="sg-save">Save signatory</button>
+            </form>
+        </section>
         <section id="attendance" aria-labelledby="at-title">
+            
             <div class="at-head">
                 <div>
                     <h2 class="ev-h2" id="at-title">Attendance records</h2>
@@ -912,33 +938,7 @@
                 </table>
             </div>
         </section>
-        <section class="sg" id="signatory" aria-labelledby="sg-title">
-            <h2 class="ev-h2" id="sg-title">Certificate signatory</h2>
-            <p class="ev-lede">Printed at the bottom of every certificate. Saving changes the one existing record, and the name prints in capital letters.</p>
-
-            <form method="POST" action="{{ route('signatory.update') }}" class="sg-form" id="sg-form">
-                @csrf
-                @method('PUT')
-
-                <div class="sg-field">
-                    <label for="sg-name">Name</label>
-                    <input id="sg-name" name="name" type="text" maxlength="120" required autocomplete="off"
-                        value="{{ old('name', $signatory['name']) }}">
-                    @error('name')
-                    <p class="sg-err">{{ $message }}</p>@enderror
-                </div>
-
-                <div class="sg-field">
-                    <label for="sg-role">Role</label>
-                    <input id="sg-role" name="role" type="text" maxlength="160" required autocomplete="off"
-                        value="{{ old('role', $signatory['role']) }}">
-                    @error('role')
-                    <p class="sg-err">{{ $message }}</p>@enderror
-                </div>
-
-                <button class="sg-save" id="sg-save">Save signatory</button>
-            </form>
-        </section>
+        
     </div>
 
     {{--

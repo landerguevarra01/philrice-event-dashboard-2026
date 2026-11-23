@@ -55,8 +55,26 @@ parameters:
 			path: app/Http/Controllers/ParticipantController.php
 
 		-
+			message: '#^Method App\\Http\\Controllers\\ParticipantController\:\:issuePlus\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/ParticipantController.php
+
+		-
 			message: '#^Method App\\Http\\Controllers\\ParticipantController\:\:open\(\) has no return type specified\.$#'
 			identifier: missingType.return
+			count: 1
+			path: app/Http/Controllers/ParticipantController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\ParticipantController\:\:plusDay\(\) has parameter \$attendedDays with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Http/Controllers/ParticipantController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\ParticipantController\:\:plusDay\(\) should return int\|null but returns float\|int\|null\.$#'
+			identifier: return.type
 			count: 1
 			path: app/Http/Controllers/ParticipantController.php
 

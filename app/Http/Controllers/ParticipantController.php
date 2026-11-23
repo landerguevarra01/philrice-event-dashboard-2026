@@ -137,24 +137,28 @@ class ParticipantController extends Controller
     {
         $requirements = $participant->requirements->keyBy('day');
         $attendedDays = $this->attendedDays($participant, $attendance);
+        $plusDay = $this->plusDay($participant, $attendedDays);
 
         $start = Carbon::parse(config('event.start_date'));
 
-        $days = collect(range(1, (int) config('event.days')))->map(function ($n) use ($start, $attendedDays) {
+        $days = collect(range(1, (int) config('event.days')))->map(function ($n) use ($start, $attendedDays, $plusDay) {
             $date = $start->copy()->addDays($n - 1);
+            $attended = in_array($n, $attendedDays, true);
 
             return [
                 'number' => $n,
                 'date' => $date,
                 'is_today' => $date->isToday(),
-                'attended' => in_array($n, $attendedDays, true),
+                'attended' => $attended,
+                'extra' => $n === $plusDay,
+                'unlocked' => $attended || $n === $plusDay,
             ];
         });
 
         $todayAttendance = $participant->attendances->first(fn ($a) => $a->attended_on->isToday());
 
-        // The issued date on the certificate is the last day they attended (the +1 button adds a day)
-        $issuedOn = $this->attendedDates($participant, $attendance)->last();
+        $base = $this->attendedDates($participant, $attendance)->last();
+        $issuedOn = $base?->addDays($participant->issued_plus ? 1 : 0);
 
         return view('participants.show', [
             'participant' => $participant,
@@ -162,8 +166,36 @@ class ParticipantController extends Controller
             'days' => $days,
             'todayAttendance' => $todayAttendance,
             'issued' => $issuedOn?->format('F j, Y'),
-            'issuedPlus' => $issuedOn?->addDay()->format('F j, Y'),
+            'issuedPlus' => $base?->addDay()->format('F j, Y'),
+            'plusActive' => (bool) $participant->issued_plus,
         ]);
+    }
+
+    /** The day after their last attended day, only while "+1 day" is switched on. */
+    private function plusDay(Participant $participant, array $attendedDays): ?int
+    {
+        if (! $participant->issued_plus || $attendedDays === []) {
+            return null;
+        }
+
+        $next = max($attendedDays) + 1;
+
+        return $next <= (int) config('event.days') ? $next : null;
+    }
+
+    public function issuePlus(Request $request, Participant $participant, AttendanceApi $attendance)
+    {
+        $enable = $request->boolean('enabled');
+
+        if ($enable && $this->attendedDates($participant, $attendance)->isEmpty()) {
+            return back()->with('error', 'Check this participant in first.');
+        }
+
+        $participant->update(['issued_plus' => $enable]);
+
+        return back()->with('status', $enable
+            ? 'Certificate will be issued one day later. The next day is now open for meals and accommodation.'
+            : 'Certificate goes back to the normal issued date.');
     }
 
     /**
@@ -235,6 +267,11 @@ class ParticipantController extends Controller
     {
         $allowed = $this->attendedDays($participant, $attendance);
 
+        $plusDay = $this->plusDay($participant, $allowed);
+        if ($plusDay) {
+            $allowed[] = $plusDay;
+        }
+
         if ($allowed === []) {
             return back()->with('error', 'Meals and accommodation can only be saved for days this participant attended.');
         }
@@ -282,7 +319,7 @@ class ParticipantController extends Controller
             'requirements' => $requirements,
             'dates' => $dates,
             'attendedText' => $this->datesText($attended),
-            'issued' => $attended->last()->addDays($request->boolean('plus') ? 1 : 0)->format('F j, Y'),
+            'issued' => $attended->last()->addDays($participant->issued_plus ? 1 : 0)->format('F j, Y'),
             'signatory' => $signatory->get(),
         ])
             ->setPaper('a4', 'landscape')

@@ -447,20 +447,21 @@
             <div class="pf-cols">
                 @foreach ($days as $d)
                     @php $row = $requirements->get($d['number']); @endphp
-                    <div @class(['pf-col', 'is-today' => $d['is_today'], 'is-locked' => !$d['attended']]) role="group"
-                        aria-labelledby="day-{{ $d['number'] }}">
-                        <h3 class="pf-colhead" id="day-{{ $d['number'] }}">
-                            Day {{ $d['number'] }}
-                            <span class="pf-date">{{ $d['date']->format('M j') }}</span>
-                            @if ($d['is_today'])<span class="pf-today">Today</span>@endif
-                            @unless ($d['attended'])<span class="pf-locked">Not attended</span>@endunless
-                        </h3>
+                    <div @class(['pf-col', 'is-today' => $d['is_today'], 'is-locked' => !$d['unlocked']]) role="group"
+    aria-labelledby="day-{{ $d['number'] }}">
+    <h3 class="pf-colhead" id="day-{{ $d['number'] }}">
+        Day {{ $d['number'] }}
+        <span class="pf-date">{{ $d['date']->format('M j') }}</span>
+        @if ($d['is_today'])<span class="pf-today">Today</span>@endif
+        @if ($d['extra'])<span class="pf-today">+1 day</span>@endif
+        @unless ($d['unlocked'])<span class="pf-locked">Not attended</span>@endunless
+    </h3>
 
                         @foreach (['lunch' => 'Lunch', 'dinner' => 'Dinner', 'accommodation' => 'Accommodation'] as $item => $label)
                             <label class="pf-opt">
                                 <span>{{ $label }}</span>
                                 <input type="checkbox" name="days[{{ $d['number'] }}][{{ $item }}]" value="1"
-                                    @checked($row?->$item) @disabled(!$d['attended'])>
+                                    @checked($row?->$item) @disabled(!$d['unlocked'])>
                             </label>
                         @endforeach
                     </div>
@@ -476,7 +477,7 @@
     <div>
         <h2 class="pf-h2">Certificate</h2>
         @if ($issued)
-            <p class="pf-lede">Opens as a PDF in a new tab. Issued date: {{ $issued }}.</p>
+            <p class="pf-lede">Opens as a PDF in a new tab. Issued date: {{ $issued }}@if ($plusActive) (+1 day)@endif.</p>
         @else
             <p class="pf-lede">Opens as a PDF in a new tab, ready to print.</p>
         @endif
@@ -485,12 +486,16 @@
     @if ($issued)
         <div class="pf-cert-actions">
             <a href="{{ route('participants.certificate', $participant) }}" target="_blank" rel="noopener" class="pf-btn line">
-                Print certificate
+                Print certificate (issued {{ $issued }})
             </a>
-            <a href="{{ route('participants.certificate', [$participant, 'plus' => 1]) }}" target="_blank" rel="noopener" class="pf-btn line"
-               title="Optional: prints the same certificate with the issued date one day later">
-                Issue on {{ $issuedPlus }} (+1 day)
-            </a>
+
+            <form method="POST" action="{{ route('participants.issueplus', $participant) }}" data-once>
+                @csrf
+                <input type="hidden" name="enabled" value="{{ $plusActive ? 0 : 1 }}">
+                <button class="pf-btn line" data-busy="Saving...">
+                    {{ $plusActive ? 'Remove +1 day' : 'Issue on ' . $issuedPlus . ' (+1 day)' }}
+                </button>
+            </form>
         </div>
     @else
         <p class="pf-muted">Check this participant in first to print a certificate.</p>

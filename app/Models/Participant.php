@@ -22,6 +22,7 @@ class Participant extends Model
 
     protected $casts = [
         'checked_in_at' => 'datetime',
+        'issued_plus' => 'boolean',
     ];
 
     public function requirements(): HasMany
