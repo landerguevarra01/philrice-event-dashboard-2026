@@ -153,7 +153,17 @@ class ParticipantController extends Controller
 
         $todayAttendance = $participant->attendances->first(fn ($a) => $a->attended_on->isToday());
 
-        return view('participants.show', compact('participant', 'requirements', 'days', 'todayAttendance'));
+        // The issued date on the certificate is the last day they attended (the +1 button adds a day)
+        $issuedOn = $this->attendedDates($participant, $attendance)->last();
+
+        return view('participants.show', [
+            'participant' => $participant,
+            'requirements' => $requirements,
+            'days' => $days,
+            'todayAttendance' => $todayAttendance,
+            'issued' => $issuedOn?->format('F j, Y'),
+            'issuedPlus' => $issuedOn?->addDay()->format('F j, Y'),
+        ]);
     }
 
     /**
@@ -253,7 +263,7 @@ class ParticipantController extends Controller
         return back()->with('status', 'Saved on this device. It will upload to Supabase automatically when the connection returns.');
     }
 
-    public function certificate(Participant $participant, AttendanceApi $attendance, SignatoryStore $signatory)
+    public function certificate(Request $request, Participant $participant, AttendanceApi $attendance, SignatoryStore $signatory)
     {
         ini_set('memory_limit', '512M');   // PDF generation can need more than the 128M default
         $attended = $this->attendedDates($participant, $attendance);
@@ -272,7 +282,7 @@ class ParticipantController extends Controller
             'requirements' => $requirements,
             'dates' => $dates,
             'attendedText' => $this->datesText($attended),
-            'issued' => $attended->last()->format('F j, Y'),
+            'issued' => $attended->last()->addDays($request->boolean('plus') ? 1 : 0)->format('F j, Y'),
             'signatory' => $signatory->get(),
         ])
             ->setPaper('a4', 'landscape')

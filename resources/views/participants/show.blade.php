@@ -381,6 +381,8 @@
             color: #5C4300;
             font-size: .9375rem;
         }
+
+        .pf-cert-actions { display: flex; flex-wrap: wrap; gap: .75rem; }
     </style>
 
     <section class="pf-hero">
@@ -471,18 +473,29 @@
         </form>
 
         <section class="pf-cert">
-            <div>
-                <h2 class="pf-h2">Certificate</h2>
-                <p class="pf-lede">Opens as a PDF in a new tab, ready to print.</p>
-            </div>
+    <div>
+        <h2 class="pf-h2">Certificate</h2>
+        @if ($issued)
+            <p class="pf-lede">Opens as a PDF in a new tab. Issued date: {{ $issued }}.</p>
+        @else
+            <p class="pf-lede">Opens as a PDF in a new tab, ready to print.</p>
+        @endif
+    </div>
 
-            @if ($participant->checked_in_at)
-                <a href="{{ route('participants.certificate', $participant) }}" target="_blank" rel="noopener"
-                    class="pf-btn line">Print certificate</a>
-            @else
-                <p class="pf-muted">Check this participant in first to print a certificate.</p>
-            @endif
-        </section>
+    @if ($issued)
+        <div class="pf-cert-actions">
+            <a href="{{ route('participants.certificate', $participant) }}" target="_blank" rel="noopener" class="pf-btn line">
+                Print certificate
+            </a>
+            <a href="{{ route('participants.certificate', [$participant, 'plus' => 1]) }}" target="_blank" rel="noopener" class="pf-btn line"
+               title="Optional: prints the same certificate with the issued date one day later">
+                Issue on {{ $issuedPlus }} (+1 day)
+            </a>
+        </div>
+    @else
+        <p class="pf-muted">Check this participant in first to print a certificate.</p>
+    @endif
+</section>
     </div>
 
     <script>
