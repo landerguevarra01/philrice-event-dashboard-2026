@@ -302,23 +302,34 @@ class ParticipantController extends Controller
 
     public function certificate(Request $request, Participant $participant, AttendanceApi $attendance, SignatoryStore $signatory)
     {
-        ini_set('memory_limit', '512M');   // PDF generation can need more than the 128M default
+        ini_set('memory_limit', '512M');
         $attended = $this->attendedDates($participant, $attendance);
 
         abort_unless($attended->isNotEmpty(), 403, 'This participant has not attended any day yet.');
 
         $requirements = $participant->requirements->keyBy('day');
 
-        // Event days, for the Nov-23 / Nov-24 / Nov-25 columns of the meals table
         $start = Carbon::parse(config('event.start_date'));
         $dates = collect(range(1, (int) config('event.days')))
             ->mapWithKeys(fn ($day) => [$day => $start->copy()->addDays($day - 1)]);
+
+        // When "+1 day" is on, the next day is shown as a day of participation too
+        $shown = $attended;
+        $plusDay = $this->plusDay($participant, $this->attendedDays($participant, $attendance));
+
+        if ($plusDay) {
+            $shown = $attended
+                ->concat([CarbonImmutable::parse(config('event.start_date'))->startOfDay()->addDays($plusDay - 1)])
+                ->unique(fn ($d) => $d->toDateString())
+                ->sortBy(fn ($d) => $d->getTimestamp())
+                ->values();
+        }
 
         return Pdf::loadView('certificates.participant', [
             'participant' => $participant,
             'requirements' => $requirements,
             'dates' => $dates,
-            'attendedText' => $this->datesText($attended),
+            'attendedText' => $this->datesText($shown),
             'issued' => $attended->last()->addDays($participant->issued_plus ? 1 : 0)->format('F j, Y'),
             'signatory' => $signatory->get(),
         ])
@@ -370,8 +381,8 @@ class ParticipantController extends Controller
         $sameYear = $first->year === $last->year;
         $consecutive = (int) $first->diffInDays($last) === $dates->count() - 1;
 
-        // Three or more days in a row become a range
-        if ($consecutive && $dates->count() >= 3) {
+        // Two or more days in a row become a range
+        if ($consecutive && $dates->count() >= 2) {
             if ($sameMonth) {
                 return $first->format('F j').' to '.$last->format('j, Y');
             }
