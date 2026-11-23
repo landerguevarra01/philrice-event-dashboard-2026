@@ -18,6 +18,7 @@ class Participant extends Model
         'sex',
         'age_bracket',
         'region',
+        'issued_plus',
     ];
 
     protected $casts = [
