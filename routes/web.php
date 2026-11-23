@@ -25,7 +25,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/attendance', AttendanceController::class)->name('attendance.index');
 
-    Route::get('/signatory', [SignatoryController::class, 'show'])->name('signatory.show');
+    // Route::get('/signatory', [SignatoryController::class, 'show'])->name('signatory.show');
     Route::put('/signatory', [SignatoryController::class, 'update'])->name('signatory.update');
 });
 

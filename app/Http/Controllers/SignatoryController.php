@@ -3,17 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Services\SignatoryStore;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class SignatoryController extends Controller
 {
-    public function show(SignatoryStore $store): JsonResponse
-    {
-        return response()->json($store->get());
-    }
-
     public function update(Request $request, SignatoryStore $store): RedirectResponse
     {
         $data = $request->validate([

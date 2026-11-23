@@ -914,9 +914,7 @@
         </section>
         <section class="sg" id="signatory" aria-labelledby="sg-title">
             <h2 class="ev-h2" id="sg-title">Certificate signatory</h2>
-            <p class="ev-lede">Printed at the bottom of every certificate. Saving changes the one existing record in
-                Supabase,
-                and the name prints in capital letters.</p>
+            <p class="ev-lede">Printed at the bottom of every certificate. Saving changes the one existing record, and the name prints in capital letters.</p>
 
             <form method="POST" action="{{ route('signatory.update') }}" class="sg-form" id="sg-form">
                 @csrf
@@ -1225,32 +1223,22 @@
     </script>
 
     <script>
-        (() => {
-            const form = document.getElementById('sg-form');
-            if (!form) return;
-            const name = document.getElementById('sg-name');
-            const role = document.getElementById('sg-role');
-            let dirty = false;
+    (() => {
+        const form = document.getElementById('sg-form');
+        if (!form) return;
 
-            form.addEventListener('input', () => { dirty = true; });
+        form.addEventListener('submit', () => {
+            const btn = document.getElementById('sg-save');
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+        });
 
-            fetch(@json(route('signatory.show')), { headers: { Accept: 'application/json' } })
-                .then(r => (r.ok ? r.json() : null))
-                .then(d => { if (d && !dirty) { name.value = d.name; role.value = d.role; } })
-                .catch(() => { });
-
-            form.addEventListener('submit', () => {
-                const btn = document.getElementById('sg-save');
-                btn.disabled = true;
-                btn.textContent = 'Saving...';
-            });
-
-            // After the browser's Back button, the page can come back with the button still disabled
-            window.addEventListener('pageshow', () => {
-                const btn = document.getElementById('sg-save');
-                btn.disabled = false;
-                btn.textContent = 'Save signatory';
-            });
-        })();
-    </script>
+        // After the browser's Back button, the page can come back with the button still disabled
+        window.addEventListener('pageshow', () => {
+            const btn = document.getElementById('sg-save');
+            btn.disabled = false;
+            btn.textContent = 'Save signatory';
+        });
+    })();
+</script>
 </x-app-layout>

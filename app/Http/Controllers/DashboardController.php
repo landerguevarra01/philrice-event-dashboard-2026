@@ -27,7 +27,7 @@ class DashboardController extends Controller
             'pending' => $sync->counts(),
             'registration' => $this->registrationLink(),
             'dayCount' => (int) config('event.days'),
-            'signatory' => $signatories->cached(),
+            'signatory' => $signatories->get(),
         ]);
     }
 

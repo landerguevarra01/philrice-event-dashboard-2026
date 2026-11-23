@@ -235,12 +235,6 @@ parameters:
 			path: app/Services/PendingSync.php
 
 		-
-			message: '#^Parameter \#1 \$key of method Illuminate\\Http\\Client\\Response\:\:json\(\) expects string\|null, int given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Services/SignatoryStore.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$accommodation\.$#'
 			identifier: property.notFound
 			count: 1
