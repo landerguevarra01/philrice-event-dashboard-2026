@@ -19,6 +19,8 @@ class Participant extends Model
         'age_bracket',
         'region',
         'issued_plus',
+        'stay_from',
+        'stay_to',
     ];
 
     protected $casts = [
@@ -29,6 +31,12 @@ class Participant extends Model
     public function requirements(): HasMany
     {
         return $this->hasMany(DayRequirement::class);
+    }
+
+    /** @return HasMany<MealDay, $this> */
+    public function mealDays(): HasMany
+    {
+        return $this->hasMany(MealDay::class);
     }
 
     // Used by the search page: Participant::search($term)->get()

@@ -27,7 +27,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Route::get('/signatory', [SignatoryController::class, 'show'])->name('signatory.show');
     Route::put('/signatory', [SignatoryController::class, 'update'])->name('signatory.update');
-    Route::post('/participants/{participant}/issue-plus', [ParticipantController::class, 'issuePlus'])->name('participants.issueplus');
+    Route::post('/participants/{participant}/dates', [ParticipantController::class, 'saveDates'])->name('participants.dates');
+    // Route::post('/participants/{participant}/dates', [ParticipantController::class, 'saveDates'])->name('participants.dates');
 });
 
 // Public: anyone with the link can register. Everything else stays behind login.

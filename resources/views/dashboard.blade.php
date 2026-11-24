@@ -857,6 +857,7 @@
                 <button class="sg-save" id="sg-save">Save signatory</button>
             </form>
         </section>
+        
         <section id="attendance" aria-labelledby="at-title">
             
             <div class="at-head">

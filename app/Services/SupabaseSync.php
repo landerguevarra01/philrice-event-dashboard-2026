@@ -9,43 +9,76 @@ class SupabaseSync
 {
     public function syncRequirements(Participant $participant): bool
     {
-        $url = config('services.supabase.url');
-        $key = config('services.supabase.key');
+        $url = (string) config('services.supabase.url');
+        $key = (string) config('services.supabase.key');
 
-        if (! $url || ! $key) {
+        if ($url === '' || $key === '') {
             return false;
         }
 
-        $rows = $participant->requirements->map(fn ($r) => [
-            'participant_code' => $participant->participant_code,
-            'participant_name' => $participant->name,
-            'organization' => $participant->organization,
-            'day' => $r->day,
-            'lunch' => $r->lunch,
-            'dinner' => $r->dinner,
-            'accommodation' => $r->accommodation,
-            'updated_at' => now()->toIso8601String(),
-        ])->values()->all();
+        $from = $participant->stay_from;
+        $to = $participant->stay_to;
 
-        if (empty($rows)) {
+        // No dates chosen yet, so there is nothing to send
+        if ($from === null || $to === null) {
             return true;
         }
 
-        try {
-            $response = Http::connectTimeout(3)->timeout(8)
-                ->withHeaders([
-                    'apikey' => $key,
-                    'Authorization' => 'Bearer '.$key,
-                    // update the row if (participant_code, day) already exists
-                    'Prefer' => 'resolution=merge-duplicates,return=minimal',
-                ])
-                ->post(rtrim($url, '/').'/rest/v1/day_requirements?on_conflict=participant_code,day', $rows);
+        $rows = $participant->mealDays
+            ->filter(fn ($m) => $m->service_date >= $from && $m->service_date <= $to)
+            ->map(fn ($m) => [
+                'participant_code' => $participant->participant_code,
+                'participant_name' => $participant->name,
+                'organization' => $participant->organization,
+                'service_date' => $m->service_date,
+                'lunch' => $m->lunch,
+                'dinner' => $m->dinner,
+                'accommodation' => $m->accommodation,
+                'stay_from' => $from,
+                'stay_to' => $to,
+                'updated_at' => now()->toIso8601String(),
+            ])
+            ->values()
+            ->all();
 
-            if (! $response->successful()) {
-                logger()->warning('Supabase sync failed', ['status' => $response->status(), 'body' => $response->body()]);
+        $base = rtrim($url, '/').'/rest/v1/daily_requirements';
+
+        $headers = array_filter([
+            'apikey' => $key,
+            'Authorization' => str_starts_with($key, 'eyJ') ? 'Bearer '.$key : null,
+        ]);
+
+        try {
+            if ($rows !== []) {
+                $saved = Http::connectTimeout(3)
+                    ->timeout(8)
+                    ->withHeaders($headers + ['Prefer' => 'resolution=merge-duplicates,return=minimal'])
+                    ->post($base.'?on_conflict=participant_code,service_date', $rows);
+
+                if (! $saved->successful()) {
+                    logger()->warning('Supabase sync failed', ['status' => $saved->status(), 'body' => $saved->body()]);
+
+                    return false;
+                }
             }
 
-            return $response->successful();
+            // Dates that are no longer in the range must not stay in Supabase
+            $removed = Http::connectTimeout(3)
+                ->timeout(8)
+                ->withHeaders($headers)
+                ->withQueryParameters([
+                    'participant_code' => 'eq.'.$participant->participant_code,
+                    'or' => "(service_date.lt.{$from},service_date.gt.{$to})",
+                ])
+                ->delete($base);
+
+            if (! $removed->successful()) {
+                logger()->warning('Supabase cleanup failed', ['status' => $removed->status(), 'body' => $removed->body()]);
+
+                return false;
+            }
+
+            return true;
         } catch (\Throwable $e) {
             report($e);
 

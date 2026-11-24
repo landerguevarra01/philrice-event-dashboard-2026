@@ -19,12 +19,6 @@ parameters:
 			path: app/Http/Controllers/DashboardController.php
 
 		-
-			message: '#^Part \$remaining \(non\-empty\-array\|float\|int\<min, \-1\>\|int\<1, max\>\) of encapsed string cannot be cast to string\.$#'
-			identifier: encapsedStringPart.nonString
-			count: 1
-			path: app/Http/Controllers/DashboardController.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\Participant\:\:\$attendances\.$#'
 			identifier: property.notFound
 			count: 3
@@ -55,31 +49,7 @@ parameters:
 			path: app/Http/Controllers/ParticipantController.php
 
 		-
-			message: '#^Method App\\Http\\Controllers\\ParticipantController\:\:issuePlus\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: app/Http/Controllers/ParticipantController.php
-
-		-
 			message: '#^Method App\\Http\\Controllers\\ParticipantController\:\:open\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: app/Http/Controllers/ParticipantController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\ParticipantController\:\:plusDay\(\) has parameter \$attendedDays with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Http/Controllers/ParticipantController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\ParticipantController\:\:plusDay\(\) should return int\|null but returns float\|int\|null\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Http/Controllers/ParticipantController.php
-
-		-
-			message: '#^Method App\\Http\\Controllers\\ParticipantController\:\:saveRequirements\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
 			path: app/Http/Controllers/ParticipantController.php
@@ -235,74 +205,14 @@ parameters:
 			path: app/Services/PendingSync.php
 
 		-
-			message: '#^Method App\\Services\\PendingSync\:\:counts\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Services/PendingSync.php
-
-		-
-			message: '#^Method App\\Services\\PendingSync\:\:run\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Services/PendingSync.php
-
-		-
 			message: '#^Relation ''participant'' is not found in App\\Models\\Attendance model\.$#'
 			identifier: larastan.relationExistence
 			count: 1
 			path: app/Services/PendingSync.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$accommodation\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/SupabaseSync.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$day\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/SupabaseSync.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$dinner\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/SupabaseSync.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$lunch\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/SupabaseSync.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Services/SupabaseSync.php
-
-		-
-			message: '#^Parameter \#2 \$data of method Illuminate\\Http\\Client\\PendingRequest\<false\>\:\:post\(\) expects array\<int\<0, max\>\|string, mixed\>\|object\|null, non\-empty\-array\<int, array\{participant_code\: string, participant_name\: string, organization\: string\|null, day\: mixed, lunch\: mixed, dinner\: mixed, accommodation\: mixed, updated_at\: string\}\> given\.$#'
+			message: '#^Parameter \#2 \$data of method Illuminate\\Http\\Client\\PendingRequest\<false\>\:\:post\(\) expects array\<int\<0, max\>\|string, mixed\>\|object\|null, non\-empty\-array\<int, array\{participant_code\: string, participant_name\: string, organization\: string\|null, service_date\: string, lunch\: bool, dinner\: bool, accommodation\: bool, stay_from\: string, \.\.\.\}\> given\.$#'
 			identifier: argument.type
-			count: 1
-			path: app/Services/SupabaseSync.php
-
-		-
-			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: method.unresolvableReturnType
-			count: 1
-			path: app/Services/SupabaseSync.php
-
-		-
-			message: '#^Return type of call to method Illuminate\\Support\\Collection\<int,array\<string, mixed\>\>\:\:all\(\) contains unresolvable type\.$#'
-			identifier: method.unresolvableReturnType
-			count: 1
-			path: app/Services/SupabaseSync.php
-
-		-
-			message: '#^Return type of call to method Illuminate\\Support\\Collection\<int,array\<string, mixed\>\>\:\:values\(\) contains unresolvable type\.$#'
-			identifier: method.unresolvableReturnType
 			count: 1
 			path: app/Services/SupabaseSync.php
 

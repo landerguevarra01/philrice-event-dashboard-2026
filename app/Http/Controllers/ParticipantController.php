@@ -12,12 +12,15 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 
 class ParticipantController extends Controller
 {
+    private const MAX_DAYS = 7;
+
     // Called by the dashboard search box (JSON)
     public function search(Request $request, ParticipantApi $api): JsonResponse
     {
@@ -135,99 +138,91 @@ class ParticipantController extends Controller
 
     public function show(Participant $participant, AttendanceApi $attendance)
     {
-        $requirements = $participant->requirements->keyBy('day');
-        $attendedDays = $this->attendedDays($participant, $attendance);
-        $plusDay = $this->plusDay($participant, $attendedDays);
+        $attended = $this->attendedDates($participant, $attendance);
+        $range = $this->stayRange($participant, $attended);
 
-        $start = Carbon::parse(config('event.start_date'));
+        $attendedKeys = $attended->map(fn ($d) => $d->toDateString())->all();
+        $meals = $participant->mealDays->keyBy('service_date');
 
-        $days = collect(range(1, (int) config('event.days')))->map(function ($n) use ($start, $attendedDays, $plusDay) {
-            $date = $start->copy()->addDays($n - 1);
-            $attended = in_array($n, $attendedDays, true);
-
-            return [
-                'number' => $n,
+        $days = $range === null
+            ? collect()
+            : $this->rangeDates($range)->map(fn ($date) => [
                 'date' => $date,
-                'is_today' => $date->isToday(),
-                'attended' => $attended,
-                'extra' => $n === $plusDay,
-                'unlocked' => $attended || $n === $plusDay,
-            ];
-        });
+                'key' => $date->toDateString(),
+                'attended' => in_array($date->toDateString(), $attendedKeys, true),
+                'meal' => $meals->get($date->toDateString()),
+            ]);
 
         $todayAttendance = $participant->attendances->first(fn ($a) => $a->attended_on->isToday());
 
-        $base = $this->attendedDates($participant, $attendance)->last();
-        $issuedOn = $base?->addDays($participant->issued_plus ? 1 : 0);
-
         return view('participants.show', [
             'participant' => $participant,
-            'requirements' => $requirements,
             'days' => $days,
+            'range' => $range,
+            'rangeSaved' => $participant->stay_from !== null && $participant->stay_to !== null,
+            'maxDays' => self::MAX_DAYS,
             'todayAttendance' => $todayAttendance,
-            'issued' => $issuedOn?->format('F j, Y'),
-            'issuedPlus' => $base?->addDay()->format('F j, Y'),
-            'plusActive' => (bool) $participant->issued_plus,
+            'issued' => $range === null ? null : $range['to']->format('F j, Y'),
         ]);
     }
 
-    /** The day after their last attended day, only while "+1 day" is switched on. */
-    private function plusDay(Participant $participant, array $attendedDays): ?int
+    public function saveRequirements(Request $request, Participant $participant, SupabaseSync $supabase, AttendanceApi $attendance): RedirectResponse
     {
-        if (! $participant->issued_plus || $attendedDays === []) {
-            return null;
+        $range = $this->stayRange($participant, $this->attendedDates($participant, $attendance));
+
+        if ($range === null) {
+            return back()->with('error', 'Select the first and last day first.');
         }
 
-        $next = max($attendedDays) + 1;
+        // Keep the dates that were on screen (they may have come from attendance)
+        $participant->update([
+            'stay_from' => $range['from']->toDateString(),
+            'stay_to' => $range['to']->toDateString(),
+        ]);
 
-        return $next <= (int) config('event.days') ? $next : null;
+        foreach ($this->rangeDates($range) as $date) {
+            $key = $date->toDateString();
+
+            $participant->mealDays()->updateOrCreate(
+                ['service_date' => $key],
+                [
+                    'lunch' => $request->boolean("days.$key.lunch"),
+                    'dinner' => $request->boolean("days.$key.dinner"),
+                    'accommodation' => $request->boolean("days.$key.accommodation"),
+                    'synced_at' => null,
+                ]
+            );
+        }
+
+        $participant->load('mealDays');
+
+        if ($supabase->syncRequirements($participant)) {
+            $participant->mealDays()->update(['synced_at' => now()]);
+
+            return back()->with('status', 'Requirements saved.');
+        }
+
+        return back()->with('status', 'Saved on this device. It will upload to Supabase automatically when the connection returns.');
     }
 
-    public function issuePlus(Request $request, Participant $participant, AttendanceApi $attendance)
+    public function certificate(Participant $participant, AttendanceApi $attendance, SignatoryStore $signatory)
     {
-        $enable = $request->boolean('enabled');
+        ini_set('memory_limit', '512M');   // PDF generation can need more than the 128M default
 
-        if ($enable && $this->attendedDates($participant, $attendance)->isEmpty()) {
-            return back()->with('error', 'Check this participant in first.');
-        }
+        $range = $this->stayRange($participant, $this->attendedDates($participant, $attendance));
 
-        $participant->update(['issued_plus' => $enable]);
+        abort_unless($range !== null, 403, 'Select the first and last day for this participant first.');
 
-        return back()->with('status', $enable
-            ? 'Certificate will be issued one day later. The next day is now open for meals and accommodation.'
-            : 'Certificate goes back to the normal issued date.');
-    }
-
-    /**
-     * Event day numbers (1, 2, 3) this person attended: the registration system's records,
-     * plus any check-in made on this device on an event day.
-     *
-     * @return array<int, int>
-     */
-    private function attendedDays(Participant $participant, AttendanceApi $attendance): array
-    {
-        $days = [];
-
-        $record = collect($attendance->get()['records'])->firstWhere('code', $participant->participant_code);
-
-        foreach ($record['days'] ?? [] as $index => $day) {
-            if (($day['date'] ?? null) !== null) {
-                $days[] = $index + 1;
-            }
-        }
-
-        $start = CarbonImmutable::parse(config('event.start_date'))->startOfDay();
-        $eventDays = (int) config('event.days');
-
-        foreach ($this->localAttendances($participant, $record) as $a) {
-            $n = (int) round($start->diffInDays(CarbonImmutable::parse($a->attended_on)->startOfDay(), false)) + 1;
-
-            if ($n >= 1 && $n <= $eventDays) {
-                $days[] = $n;
-            }
-        }
-
-        return array_values(array_unique($days));
+        return Pdf::loadView('certificates.participant', [
+            'participant' => $participant,
+            'meals' => $participant->mealDays->keyBy('service_date'),
+            'dates' => $this->rangeDates($range),
+            'attendedText' => $this->rangeText($range['from'], $range['to']),
+            'issued' => $range['to']->format('F j, Y'),   // the last selected day
+            'signatory' => $signatory->get(),
+        ])
+            ->setPaper('a4', 'landscape')
+            ->stream("certificate-{$participant->participant_code}.pdf");
     }
 
     public function checkIn(Participant $participant, ParticipantApi $api, AttendanceApi $attendance)
@@ -263,80 +258,6 @@ class ParticipantController extends Controller
             : $result['message']);
     }
 
-    public function saveRequirements(Request $request, Participant $participant, SupabaseSync $supabase, AttendanceApi $attendance)
-    {
-        $allowed = $this->attendedDays($participant, $attendance);
-
-        $plusDay = $this->plusDay($participant, $allowed);
-        if ($plusDay) {
-            $allowed[] = $plusDay;
-        }
-
-        if ($allowed === []) {
-            return back()->with('error', 'Meals and accommodation can only be saved for days this participant attended.');
-        }
-
-        // Only the days they attended. Locked days are left exactly as they are.
-        foreach ($allowed as $day) {
-            $participant->requirements()->updateOrCreate(
-                ['day' => $day],
-                [
-                    'lunch' => $request->boolean("days.$day.lunch"),
-                    'dinner' => $request->boolean("days.$day.dinner"),
-                    'accommodation' => $request->boolean("days.$day.accommodation"),
-                    'synced_at' => null,
-                ]
-            );
-        }
-
-        $participant->load('requirements');
-
-        if ($supabase->syncRequirements($participant)) {
-            $participant->requirements()->update(['synced_at' => now()]);
-
-            return back()->with('status', 'Requirements saved.');
-        }
-
-        return back()->with('status', 'Saved on this device. It will upload to Supabase automatically when the connection returns.');
-    }
-
-    public function certificate(Request $request, Participant $participant, AttendanceApi $attendance, SignatoryStore $signatory)
-    {
-        ini_set('memory_limit', '512M');
-        $attended = $this->attendedDates($participant, $attendance);
-
-        abort_unless($attended->isNotEmpty(), 403, 'This participant has not attended any day yet.');
-
-        $requirements = $participant->requirements->keyBy('day');
-
-        $start = Carbon::parse(config('event.start_date'));
-        $dates = collect(range(1, (int) config('event.days')))
-            ->mapWithKeys(fn ($day) => [$day => $start->copy()->addDays($day - 1)]);
-
-        // When "+1 day" is on, the next day is shown as a day of participation too
-        $shown = $attended;
-        $plusDay = $this->plusDay($participant, $this->attendedDays($participant, $attendance));
-
-        if ($plusDay) {
-            $shown = $attended
-                ->concat([CarbonImmutable::parse(config('event.start_date'))->startOfDay()->addDays($plusDay - 1)])
-                ->unique(fn ($d) => $d->toDateString())
-                ->sortBy(fn ($d) => $d->getTimestamp())
-                ->values();
-        }
-
-        return Pdf::loadView('certificates.participant', [
-            'participant' => $participant,
-            'requirements' => $requirements,
-            'dates' => $dates,
-            'attendedText' => $this->datesText($shown),
-            'issued' => $attended->last()->addDays($participant->issued_plus ? 1 : 0)->format('F j, Y'),
-            'signatory' => $signatory->get(),
-        ])
-            ->setPaper('a4', 'landscape')
-            ->stream("certificate-{$participant->participant_code}.pdf");
-    }
-
     /**
      * The days this person attended: the registration system's records plus any check-in made on this device.
      *
@@ -364,44 +285,6 @@ class ParticipantController extends Controller
     }
 
     /**
-     * "November 16, 2026" / "November 23 and 25, 2026" / "November 23 to 25, 2026"
-     *
-     * @param  Collection<int, CarbonImmutable>  $dates
-     */
-    private function datesText(Collection $dates): string
-    {
-        $first = $dates->first();
-        $last = $dates->last();
-
-        if ($dates->count() === 1) {
-            return $first->format('F j, Y');
-        }
-
-        $sameMonth = $first->format('Y-m') === $last->format('Y-m');
-        $sameYear = $first->year === $last->year;
-        $consecutive = (int) $first->diffInDays($last) === $dates->count() - 1;
-
-        // Two or more days in a row become a range
-        if ($consecutive && $dates->count() >= 2) {
-            if ($sameMonth) {
-                return $first->format('F j').' to '.$last->format('j, Y');
-            }
-
-            return $sameYear
-                ? $first->format('F j').' to '.$last->format('F j, Y')
-                : $first->format('F j, Y').' to '.$last->format('F j, Y');
-        }
-
-        $labels = $dates->map(fn ($d) => $sameMonth ? $d->format('j') : ($sameYear ? $d->format('F j') : $d->format('F j, Y')));
-
-        $joined = $labels->count() === 2
-            ? $labels->implode(' and ')
-            : $labels->slice(0, -1)->implode(', ').' and '.$labels->last();
-
-        return ($sameMonth ? $first->format('F').' ' : '').$joined.($sameYear ? ', '.$last->format('Y') : '');
-    }
-
-    /**
      * Local check-ins that count. When the registration system has a record for this person, it is
      * the truth, so only check-ins that have not been uploaded yet are added to it. Without a record,
      * every local check-in counts.
@@ -414,5 +297,90 @@ class ParticipantController extends Controller
         return $record === null
             ? $participant->attendances
             : $participant->attendances->whereNull('synced_at');
+    }
+
+    /**
+     * The dates on the certificate and in the meals list: the range staff selected,
+     * or else the first to the last day this person attended.
+     *
+     * @param  Collection<int, CarbonImmutable>  $attended
+     * @return array{from: CarbonImmutable, to: CarbonImmutable}|null
+     */
+    private function stayRange(Participant $participant, Collection $attended): ?array
+    {
+        if ($participant->stay_from !== null && $participant->stay_to !== null) {
+            return [
+                'from' => CarbonImmutable::parse($participant->stay_from)->startOfDay(),
+                'to' => CarbonImmutable::parse($participant->stay_to)->startOfDay(),
+            ];
+        }
+
+        if ($attended->isEmpty()) {
+            return null;
+        }
+
+        $from = $attended->first();
+        $to = $attended->last();
+        $limit = $from->addDays(self::MAX_DAYS - 1);
+
+        return ['from' => $from, 'to' => $to->greaterThan($limit) ? $limit : $to];
+    }
+
+    /**
+     * @param  array{from: CarbonImmutable, to: CarbonImmutable}  $range
+     * @return Collection<int, CarbonImmutable>
+     */
+    private function rangeDates(array $range): Collection
+    {
+        $dates = collect();
+
+        for ($day = $range['from']; $day->lessThanOrEqualTo($range['to']) && $dates->count() < self::MAX_DAYS; $day = $day->addDay()) {
+            $dates->push($day);
+        }
+
+        return $dates;
+    }
+
+    private function rangeText(CarbonImmutable $from, CarbonImmutable $to): string
+    {
+        if ($from->isSameDay($to)) {
+            return $from->format('F j, Y');
+        }
+
+        if ($from->format('Y-m') === $to->format('Y-m')) {
+            return $from->format('F j').' to '.$to->format('j, Y');
+        }
+
+        return $from->year === $to->year
+            ? $from->format('F j').' to '.$to->format('F j, Y')
+            : $from->format('F j, Y').' to '.$to->format('F j, Y');
+    }
+
+    public function saveDates(Request $request, Participant $participant, SupabaseSync $supabase): RedirectResponse
+    {
+        $data = $request->validate([
+            'stay_from' => ['required', 'date_format:Y-m-d'],
+            'stay_to' => ['required', 'date_format:Y-m-d', 'after_or_equal:stay_from'],
+        ], [
+            'stay_to.after_or_equal' => 'The last day cannot be before the first day.',
+        ], [
+            'stay_from' => 'first day',
+            'stay_to' => 'last day',
+        ]);
+
+        $from = CarbonImmutable::parse($data['stay_from']);
+        $to = CarbonImmutable::parse($data['stay_to']);
+
+        if ((int) round($from->diffInDays($to)) > self::MAX_DAYS - 1) {
+            return back()->withInput()->with('error', 'Choose at most '.self::MAX_DAYS.' days.');
+        }
+
+        $participant->update(['stay_from' => $data['stay_from'], 'stay_to' => $data['stay_to']]);
+
+        // Send the new dates to Supabase and remove dates that are no longer in the range there
+        $participant->load('mealDays');
+        $participant->mealDays()->update(['synced_at' => $supabase->syncRequirements($participant) ? now() : null]);
+
+        return back()->with('status', 'Dates saved.');
     }
 }
